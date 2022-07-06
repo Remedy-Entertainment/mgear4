@@ -41,6 +41,38 @@ def normalize2(string):
     return re.sub("[^A-Za-z0-9_]", "_", str(string))
 
 
+def normalize_path(string):
+    """Ensure that string path use always forward slash
+
+    Args:
+        string (TYPE): Description
+
+    Returns:
+        TYPE: Description
+    """
+    return string.replace('\\', '/')
+
+
+def normalize_with_padding(string):
+    """Replace all invalid characters with "_". including "-"
+    This ensure that the name is compatible with Maya naming rules
+
+    Also list of # symbol with properly padded index.
+
+    ie. count_### > count_001
+
+    :param string string: A string to normalize.
+    :return string: Normalized string
+
+    """
+    string = str(string)
+
+    if re.match("^[0-9]", string):
+        string = "_" + string
+
+    return re.sub("[^A-Za-z0-9_#]", "_", str(string))
+
+
 def removeInvalidCharacter(string):
     """Remove all invalid character.
 

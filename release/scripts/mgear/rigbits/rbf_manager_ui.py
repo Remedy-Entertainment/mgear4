@@ -1160,7 +1160,7 @@ class RBFManagerUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         Args:
             rbfNodes (list): [of RBFNodes]
         """
-        rbfNodes = sorted(rbfNodes)
+        rbfNodes = sorted(rbfNodes, key=lambda x: x.name)
         self.rbfTabWidget.clear()
         for rbfNode in rbfNodes:
             weightInfo = rbfNode.getNodeInfo()
@@ -1404,9 +1404,7 @@ class RBFManagerUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         Returns:
             n/a: nada
         """
-        sceneFilePath = mc.file(sn=True, q=True)
-        startDir = os.path.dirname(sceneFilePath)
-        filePath = rbf_io.fileDialog(startDir, mode=1)
+        filePath = rbf_io.fileDialog(mode=1)
         if filePath is None:
             return
         rbf_io.importRBFs(filePath)
@@ -1432,9 +1430,7 @@ class RBFManagerUI(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
             nodesToExport = self.currentRBFSetupNodes
 
         nodesToExport = [n.name for n in nodesToExport]
-        sceneFilePath = mc.file(sn=True, q=True)
-        startDir = os.path.dirname(sceneFilePath)
-        filePath = rbf_io.fileDialog(startDir, mode=0)
+        filePath = rbf_io.fileDialog(mode=0)
         if filePath is None:
             return
         rbf_io.exportRBFs(nodesToExport, filePath)

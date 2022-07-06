@@ -106,6 +106,14 @@ class ChannelMaster(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.file_import_action.setIcon(pyqt.get_icon("mgear_log-in"))
         self.file_import_add_action = QtWidgets.QAction("Import Add", self)
         self.file_import_add_action.setIcon(pyqt.get_icon("mgear_log-in"))
+        self.use_node_namespace_action = QtWidgets.QAction(
+            "Use Namespace From ChannelMaster Node", self)
+        self.use_node_namespace_action.setCheckable(True)
+        self.use_node_namespace_action.setChecked(True)
+
+        self.use_only_local_data_action = QtWidgets.QAction(
+            "Use Only Data Embedded in Local Node", self)
+        self.use_only_local_data_action.setCheckable(True)
 
         # Display actions
         self.display_fullname_action = QtWidgets.QAction(
@@ -180,6 +188,9 @@ class ChannelMaster(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.file_menu.addAction(self.file_export_current_action)
         self.file_menu.addAction(self.file_import_action)
         self.file_menu.addAction(self.file_import_add_action)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(self.use_node_namespace_action)
+        self.file_menu.addAction(self.use_only_local_data_action)
 
         self.display_menu = self.menu_bar.addMenu("Display")
         self.display_menu.addAction(self.display_sync_graph_action)
@@ -335,6 +346,10 @@ class ChannelMaster(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             self.import_node_data)
         self.file_import_add_action.triggered.connect(
             self.add_node_data)
+        self.use_node_namespace_action.triggered.connect(
+            self.use_node_namespace)
+        self.use_only_local_data_action.triggered.connect(
+            self.use_only_local_data)
 
         # actions display
         self.display_fullname_action.triggered.connect(
@@ -483,12 +498,28 @@ class ChannelMaster(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         Returns:
             TYPE: Description
         """
-        current_node = self.get_current_node()
-        if not current_node:
+        node = self.get_current_node()
+        if not node:
             return
-        self.namespace = pm.PyNode(current_node).namespace()
+        # local data usage
+        # first check if node has force_local_data attr if not create it
+        if not cmds.attributeQuery("force_local_data", node=node, exists=True):
+            cmds.addAttr(node, ln="force_local_data", at="bool", dv=False)
+        # refresh configuration status in actions
+        force_local_data = cmds.getAttr("{}.force_local_data".format(node))
+        self.use_only_local_data_action.setChecked(force_local_data)
 
-        return cmn.get_node_data(current_node)
+        # node namespace usage
+        # first check if node has use_node_namespace attr if not create it
+        if not cmds.attributeQuery("use_node_namespace", node=node, exists=True):
+            cmds.addAttr(node, ln="use_node_namespace", at="bool", dv=False)
+        # refresh configuration status in actions
+        use_node_namespace = cmds.getAttr("{}.use_node_namespace".format(node))
+        self.use_node_namespace_action.setChecked(use_node_namespace)
+
+        self.set_namespace(node)
+
+        return cmn.get_node_data(node)
 
     def import_node_data(self):
         """Create a new node and import the data from an exported data file
@@ -539,7 +570,7 @@ class ChannelMaster(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         """
         self.main_table.update_table_from_selection()
         # Clean values buffer
-        self.values_buffer = []
+        # self.values_buffer = []
 
     def search_channels(self):
         """Filter the visible rows in the channel table.
@@ -572,9 +603,31 @@ class ChannelMaster(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         """
         self.refresh_channels_values()
         self.action_display_fullname()
-        self.values_buffer = []
+        # self.values_buffer = []
+
+    def set_namespace(self, current_node):
+        if self.use_node_namespace_action.isChecked():
+            self.namespace = pm.PyNode(current_node).namespace()
+        else:
+            self.namespace = None
 
     # actions
+    def use_only_local_data(self):
+        node = self.get_current_node()
+        if not node:
+            return
+        use_local_data = self.use_only_local_data_action.isChecked()
+        cmds.setAttr("{}.force_local_data".format(node), use_local_data)
+        self.update_channel_master_from_node()
+
+    def use_node_namespace(self):
+        node = self.get_current_node()
+        if not node:
+            return
+        use_node_ns = self.use_node_namespace_action.isChecked()
+        cmds.setAttr("{}.use_node_namespace".format(node), use_node_ns)
+        self.update_channel_master_from_node()
+
     def action_scrubbing_update(self):
         if self.scrubbing_update_action.isChecked():
             self.cb_manager.userTimeChangedCB(

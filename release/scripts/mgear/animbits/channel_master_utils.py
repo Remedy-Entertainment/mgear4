@@ -67,7 +67,8 @@ def get_single_attribute_config(node, attr):
     """
     config = {}
     # config["ctl"] = node
-    config["ctl"] = pm.NameParser(node).stripNamespace().__str__()
+    # config["ctl"] = pm.NameParser(node).stripNamespace().__str__()
+    config["ctl"] = node
     config["color"] = None  # This is a place holder for the channel UI color
     config["type"] = cmds.attributeQuery(attr, node=node, attributeType=True)
 
@@ -137,13 +138,18 @@ def get_table_config_from_selection():
     return attrs_config, namespace
 
 
-def reset_attribute(attr_config):
+def reset_attribute(attr_config, namespace=None):
     """Reset the value of a given attribute for the attribute configuration
 
     Args:
         attr_config (dict): Attribute configuration
     """
-    obj = pm.PyNode(attr_config["ctl"])
+    if namespace:
+        ctl = namespace + pm.NameParser(
+            attr_config["ctl"]).stripNamespace().__str__()
+    else:
+        ctl = attr_config["ctl"]
+    obj = pm.PyNode(ctl)
     attr = attr_config["longName"]
 
     attribute.reset_selected_channels_value(objects=[obj], attributes=[attr])
@@ -161,7 +167,7 @@ def sync_graph_editor(attr_configs, namespace=None):
         ctl = ac["ctl"]
         if ctl not in ctls:
             if namespace:
-                ctl = namespace + ctl
+                ctl = namespace + pm.NameParser(ctl).stripNamespace().__str__()
             ctls.append(ctl)
 
     pm.select(ctls, r=True)
@@ -171,7 +177,7 @@ def sync_graph_editor(attr_configs, namespace=None):
     for ac in attr_configs:
         attr = ac["fullName"]
         if namespace:
-            attr = namespace + attr
+            attr = namespace + pm.NameParser(attr).stripNamespace().__str__()
         cnxs.append(attr)
 
     def ge_update():

@@ -74,6 +74,8 @@ class Guide(guide.ComponentGuide):
 
         self.pRoll = self.addParam("useRollCtl", "bool", True)
         self.pUseIndex = self.addParam("useIndex", "bool", False)
+        self.pRollAngle = self.addParam(
+            "rollAngle", "double", -20, -180, 180)
         self.pParentJointIndex = self.addParam(
             "parentJointIndex", "long", -1, None, None)
 
@@ -130,6 +132,8 @@ class componentSettings(MayaQWidgetDockableMixin, guide.componentMainSettings):
 
         # populate component settings
         self.populateCheck(self.settingsTab.useRollCtl_checkBox, "useRollCtl")
+        self.settingsTab.rollAngle_spinBox.setValue(
+            self.root.attr("rollAngle").get())
 
         # populate connections in main settings
         for cnx in Guide.connectors:
@@ -164,6 +168,9 @@ class componentSettings(MayaQWidgetDockableMixin, guide.componentMainSettings):
             partial(self.updateConnector,
                     self.mainSettingsTab.connector_comboBox,
                     self.connector_items))
+        self.settingsTab.rollAngle_spinBox.valueChanged.connect(
+            partial(self.updateSpinBox,
+                    self.settingsTab.rollAngle_spinBox, "rollAngle"))
 
     def dockCloseEventTriggered(self):
         pyqt.deleteInstances(self, MayaQDockWidget)
